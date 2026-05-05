@@ -1,0 +1,9 @@
+=======================================================================================================
+========================== Code Update 06.05.26 - Daniel Mundemba =====================================
+
+1. Created all required files representing the project Structure 
+2. Docs folder has the database shema which can be used to update your local database
+3. Last worked on the UI and backend of the home page (index, header and footer)
+4. Left off on the login and signup system 
+5. Check the dh.php in the includes folder for the credentials to use when setting up your database
+6. This update_logs file will be used to exaplain the code changes we have made 

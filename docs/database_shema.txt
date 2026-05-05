@@ -1,0 +1,82 @@
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,      -- Internal only, never in URLs
+    username VARCHAR(30) UNIQUE NOT NULL,         -- Public identifier
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    location VARCHAR(100),
+    profile_image VARCHAR(255) DEFAULT 'default.jpg',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_username (username)
+);
+
+
+-- Categories table
+CREATE TABLE categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    icon VARCHAR(50),              -- FontAwesome icon class
+    display_order INT DEFAULT 0
+);
+
+-- Products/Listing table
+-- Products/Listing table
+CREATE TABLE products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    slug VARCHAR(100) UNIQUE NOT NULL,            -- Public URL identifier
+    seller_id INT NOT NULL,
+    category_id INT,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    condition_status ENUM('new','like_new','good','fair') DEFAULT 'good',
+    location VARCHAR(100),
+    status ENUM('active','sold','reserved','deleted') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (seller_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(category_id),
+    INDEX idx_slug (slug),                        -- Fast slug lookups
+    INDEX idx_category (category_id),
+    INDEX idx_seller (seller_id),
+    INDEX idx_status (status),
+    FULLTEXT INDEX idx_search (title, description)
+);
+
+-- Product images (one product can have multiple images)
+CREATE TABLE product_images (
+    image_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+);
+
+-- Messages table (conversations between users)
+CREATE TABLE messages (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    receiver_id INT NOT NULL,
+    product_id INT,                -- Optional: message about specific product
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE SET NULL,
+    INDEX idx_conversation (sender_id, receiver_id),
+    INDEX idx_receiver (receiver_id, is_read)
+);
+
+-- Favorites/Wishlist (optional but good to have)
+CREATE TABLE favorites (
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, product_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+);
