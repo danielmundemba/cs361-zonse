@@ -1,34 +1,34 @@
 <?php
 $pageTitle = 'Log In';
-require_once 'includes/db.php';
-require_once 'includes/auth.php';
+require_once __DIR__ . '/includes/header.php';
 
-requireGuest();
+if (isLoggedIn()) {
+    header('Location: index.php');
+    exit;
+}
 
 $error = '';
+$login = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    
-    if (empty($email) || empty($password)) {
-        $error = 'Please fill in all fields.';
+    if (!validateCsrf()) {
+        $error = 'Invalid request. Please try again.';
     } else {
-        $stmt = $pdo->prepare("SELECT user_id, username, full_name, email, password_hash, profile_image FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
-        
-        if ($user && password_verify($password, $user['password_hash'])) {
-            loginUser($user);
-            header('Location: index.php');
+        $login = trim($_POST['login'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $result = loginUser($login, $password);
+        if ($result['success']) {
+            $redirect = $_SESSION['redirect_after_login'] ?? 'index.php';
+            unset($_SESSION['redirect_after_login']);
+            header('Location: ' . $redirect);
             exit;
         } else {
-            $error = 'Invalid email or password.';
+            $error = $result['error'];
         }
     }
 }
 
-require_once 'includes/header.php';
+$success = flash('success');
 ?>
 
 <section class="auth-section">
@@ -38,60 +38,86 @@ require_once 'includes/header.php';
                 <i class="fas fa-store"></i>
                 <span>Marketplace</span>
             </a>
-            <h1>Welcome back</h1>
+            <h1>Welcome Back</h1>
             <p>Log in to your account to continue</p>
         </div>
-        
+
+        <?php if ($success): ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <?= htmlspecialchars($success) ?>
+            </div>
+        <?php endif; ?>
+
         <?php if ($error): ?>
             <div class="alert alert-error">
                 <i class="fas fa-exclamation-circle"></i>
                 <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
-        
-        <form action="login.php" method="POST" class="auth-form">
+
+        <form method="POST" action="login.php" class="auth-form" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="login">Username or Email</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-envelope"></i>
-                    <input type="email" id="email" name="email" placeholder="you@example.com" required 
-                           value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" autofocus>
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="login" name="login" placeholder="johndoe or you@example.com"
+                           value="<?= htmlspecialchars($login) ?>" required autocomplete="username">
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Password</label>
                 <div class="input-wrapper">
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                    <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
+                    <input type="password" id="password" name="password" placeholder="••••••••"
+                           required autocomplete="current-password">
+                    <button type="button" class="toggle-password" data-target="password" tabindex="-1">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
             </div>
-            
+
             <div class="form-options">
                 <label class="checkbox-wrapper">
-                    <input type="checkbox" name="remember">
+                    <input type="checkbox" name="remember" id="remember">
                     <span class="checkmark"></span>
-                    Remember me
+                    <span>Remember me</span>
                 </label>
-                <a href="forgot-password.php" class="forgot-link">Forgot password?</a>
+                <a href="#" class="forgot-link">Forgot password?</a>
             </div>
-            
+
             <button type="submit" class="btn-auth">
                 <i class="fas fa-sign-in-alt"></i> Log In
             </button>
         </form>
-        
+
         <div class="auth-divider">
             <span>or</span>
         </div>
-        
-        <p class="auth-switch">
-            Don't have an account? <a href="signup.php">Sign up</a>
-        </p>
+
+        <div class="auth-switch">
+            Don't have an account? <a href="signup.php">Sign Up</a>
+        </div>
     </div>
 </section>
+
+<script>
+document.querySelectorAll('.toggle-password').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.target);
+        const icon = btn.querySelector('i');
+        if (target.type === 'password') {
+            target.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            target.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    });
+});
+</script>
 
 <?php require_once 'includes/footer.php'; ?>

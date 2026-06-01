@@ -1,4 +1,10 @@
 =======================================================================================================
+========================== Code Update 06.05.26 - Baron Zulu =====================================
+1.finished the authetication page
+2. finished the categories 
+3. added a new for the database update in docs 
+
+=======================================================================================================
 ========================== Code Update 06.05.26 - Daniel Mundemba =====================================
 
 1. Created all required files representing the project Structure 

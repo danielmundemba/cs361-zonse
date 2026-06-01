@@ -1,111 +1,164 @@
 <?php
-// includes/auth.php
-
 /**
- * Check if a user is currently logged in
- * @return bool
+ * Authentication Backend — includes/auth.php
+ * Provides: CSRF protection, registration, login, logout, session helpers
  */
-function isLoggedIn(): bool {
-    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-/**
- * Get the currently logged-in user's data
- * @return array|null
- */
-function getCurrentUser(): ?array {
-    if (!isLoggedIn()) {
-        return null;
+require_once __DIR__ . '/db.php';
+
+/* ─── CSRF ─── */
+function csrfToken(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
-    
+    return $_SESSION['csrf_token'];
+}
+
+function validateCsrf(): bool {
+    $token = $_POST['csrf_token'] ?? '';
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/* ─── Session / Auth State ─── */
+function isLoggedIn(): bool {
+    return isset($_SESSION['user_id']) && $_SESSION['user_id'] > 0;
+}
+
+function requireLogin(): void {
+    if (!isLoggedIn()) {
+        $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'] ?? 'index.php';
+        header('Location: login.php');
+        exit;
+    }
+}
+
+function currentUser(): ?array {
+    if (!isLoggedIn()) return null;
     global $pdo;
-    
-    $stmt = $pdo->prepare("
-        SELECT user_id, username, full_name, email, profile_image, phone, location, created_at 
-        FROM users 
-        WHERE user_id = ?
-    ");
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ? LIMIT 1");
     $stmt->execute([$_SESSION['user_id']]);
-    
     return $stmt->fetch() ?: null;
 }
 
-/**
- * Require authentication — redirect to login if not logged in
- * @param string $redirectUrl
- */
-function requireAuth(string $redirectUrl = 'login.php'): void {
-    if (!isLoggedIn()) {
-        header("Location: $redirectUrl");
-        exit;
+/* ─── Registration ─── */
+function register(array $data): array {
+    $errors = [];
+
+    $username = trim($data['username'] ?? '');
+    if (!preg_match('/^[a-zA-Z0-9_]{3,30}$/', $username)) {
+        $errors['username'] = '3-30 characters, letters, numbers & underscores only.';
+    }
+
+    $email = filter_var(trim($data['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'Enter a valid email address.';
+    }
+
+    $firstName = trim($data['first_name'] ?? '');
+    $lastName  = trim($data['last_name']  ?? '');
+    if (strlen($firstName) < 1 || strlen($firstName) > 100) {
+        $errors['first_name'] = 'First name is required.';
+    }
+    if (strlen($lastName) < 1 || strlen($lastName) > 100) {
+        $errors['last_name'] = 'Last name is required.';
+    }
+
+    $password = $data['password'] ?? '';
+    $confirm  = $data['confirm_password'] ?? '';
+    if (strlen($password) < 8) {
+        $errors['password'] = 'Must be at least 8 characters.';
+    }
+    if ($password !== $confirm) {
+        $errors['confirm_password'] = 'Passwords do not match.';
+    }
+
+    $phone = trim($data['phone'] ?? '');
+    if ($phone && !preg_match('/^[\d\s\-\+\(\)]{7,20}$/', $phone)) {
+        $errors['phone'] = 'Invalid phone number format.';
+    }
+
+    $location = trim($data['location'] ?? '');
+
+    if (empty($data['terms'])) {
+        $errors['terms'] = 'You must agree to the Terms of Service.';
+    }
+
+    if (!empty($errors)) {
+        return ['success' => false, 'errors' => $errors, 'user_id' => null];
+    }
+
+    global $pdo;
+
+    $stmt = $pdo->prepare("SELECT user_id FROM users WHERE username = ? OR email = ? LIMIT 1");
+    $stmt->execute([$username, $email]);
+    if ($stmt->fetch()) {
+        return ['success' => false, 'errors' => ['general' => 'Username or email already exists.'], 'user_id' => null];
+    }
+
+    $fullName = $firstName . ' ' . $lastName;
+    $hash = password_hash($password, PASSWORD_DEFAULT);
+
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO users (username, email, password_hash, first_name, last_name, full_name, phone, location, profile_image)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'default.jpg')
+        ");
+        $stmt->execute([$username, $email, $hash, $firstName, $lastName, $fullName, $phone, $location]);
+        return ['success' => true, 'errors' => [], 'user_id' => (int)$pdo->lastInsertId()];
+    } catch (PDOException $e) {
+        error_log('Registration error: ' . $e->getMessage());
+        return ['success' => false, 'errors' => ['general' => 'Something went wrong. Please try again.'], 'user_id' => null];
     }
 }
 
-/**
- * Require guest — redirect to home if already logged in
- * Useful for login/signup pages
- * @param string $redirectUrl
- */
-function requireGuest(string $redirectUrl = 'index.php'): void {
-    if (isLoggedIn()) {
-        header("Location: $redirectUrl");
-        exit;
+/* ─── Login ─── */
+function loginUser(string $login, string $password): array {
+    global $pdo;
+
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ? LIMIT 1");
+    $stmt->execute([$login, $login]);
+    $user = $stmt->fetch();
+
+    if (!$user || !password_verify($password, $user['password_hash'])) {
+        return ['success' => false, 'error' => 'Invalid username/email or password.'];
     }
+
+    $_SESSION['user_id']       = $user['user_id'];
+    $_SESSION['username']       = $user['username'];
+    $_SESSION['full_name']      = $user['full_name'];
+    $_SESSION['profile_image']  = $user['profile_image'] ?? 'default.jpg';
+
+    session_regenerate_id(true);
+
+    return ['success' => true, 'error' => null];
 }
 
-/**
- * Log in a user by setting session variables
- * @param array $user
- */
-function loginUser(array $user): void {
-    session_regenerate_id(true); // Prevent session fixation
-    $_SESSION['user_id'] = $user['user_id'];
-    $_SESSION['username'] = $user['username'];
-    $_SESSION['full_name'] = $user['full_name'];
-    $_SESSION['profile_image'] = $user['profile_image'] ?? 'default.jpg';
-}
-
-/**
- * Log out the current user
- */
+/* ─── Logout ─── */
 function logoutUser(): void {
     $_SESSION = [];
-    
-    if (isset($_COOKIE[session_name()])) {
-        setcookie(session_name(), '', time() - 3600, '/');
-    }
-    
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', [
+        'expires'  => time() - 3600,
+        'path'     => $params['path'],
+        'domain'   => $params['domain'],
+        'secure'   => $params['secure'],
+        'httponly' => $params['httponly'],
+        'samesite' => $params['samesite'] ?? 'Lax'
+    ]);
     session_destroy();
 }
 
-/**
- * Flash message helper
- * @param string $type
- * @param string $message
- */
-function setFlash(string $type, string $message): void {
-    $_SESSION['flash'][$type] = $message;
-}
-
-/**
- * Get and clear flash message
- * @param string $type
- * @return string|null
- */
-function getFlash(string $type): ?string {
-    if (isset($_SESSION['flash'][$type])) {
-        $message = $_SESSION['flash'][$type];
-        unset($_SESSION['flash'][$type]);
-        return $message;
+/* ─── Flash Messages ─── */
+function flash(string $type, string $message = null): ?string {
+    if ($message !== null) {
+        $_SESSION['flash_' . $type] = $message;
+        return null;
     }
-    return null;
-}
-
-/**
- * Check if user owns a resource
- * @param int $resourceOwnerId
- * @return bool
- */
-function isOwner(int $resourceOwnerId): bool {
-    return isLoggedIn() && $_SESSION['user_id'] === $resourceOwnerId;
+    $msg = $_SESSION['flash_' . $type] ?? null;
+    unset($_SESSION['flash_' . $type]);
+    return $msg;
 }

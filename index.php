@@ -39,7 +39,7 @@ $products = $stmt->fetchAll();
         </div>
         <div class="categories-grid">
             <?php foreach ($categories as $cat): ?>
-                <a href="category.php?id=<?= $cat['category_id'] ?>" class="category-card">
+               <a href="category.php?slug=<?= urlencode(strtolower(str_replace(' ', '-', $cat['name']))) ?>" class="category-card">
                     <div class="category-icon">
                         <i class="fas <?= htmlspecialchars($cat['icon'] ?? 'fa-tag') ?>"></i>
                     </div>
