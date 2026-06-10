@@ -1,14 +1,14 @@
 <?php
-$pageTitle = 'Home';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/functions.php';
 
-// Fetch categories
+// ─── Fetch categories ───
 $stmt = $pdo->query("SELECT * FROM categories ORDER BY display_order, name");
 $categories = $stmt->fetchAll();
 
-// Fetch featured/recent products
+// ─── Fetch recent products ───
 $stmt = $pdo->query("
-    SELECT p.*, pi.image_path, u.username, u.full_name as seller_name 
+    SELECT p.*, pi.image_path, u.username, u.full_name AS seller_name
     FROM products p
     LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = TRUE
     JOIN users u ON p.seller_id = u.user_id
@@ -17,6 +17,9 @@ $stmt = $pdo->query("
     LIMIT 12
 ");
 $products = $stmt->fetchAll();
+
+$pageTitle = 'Home';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <section class="hero">
@@ -39,7 +42,7 @@ $products = $stmt->fetchAll();
         </div>
         <div class="categories-grid">
             <?php foreach ($categories as $cat): ?>
-               <a href="category.php?slug=<?= urlencode(strtolower(str_replace(' ', '-', $cat['name']))) ?>" class="category-card">
+                <a href="category.php?slug=<?= urlencode(strtolower(str_replace(' ', '-', $cat['name']))) ?>" class="category-card">
                     <div class="category-icon">
                         <i class="fas <?= htmlspecialchars($cat['icon'] ?? 'fa-tag') ?>"></i>
                     </div>
@@ -56,7 +59,7 @@ $products = $stmt->fetchAll();
             <h2><i class="fas fa-fire"></i> Fresh Listings</h2>
             <a href="search.php" class="view-all">See All <i class="fas fa-arrow-right"></i></a>
         </div>
-        
+
         <?php if (empty($products)): ?>
             <div class="empty-state">
                 <i class="fas fa-box-open"></i>
@@ -66,11 +69,11 @@ $products = $stmt->fetchAll();
             <div class="products-grid">
                 <?php foreach ($products as $product): ?>
                     <article class="product-card">
-                        <a href="product.php?slug=<?= htmlspecialchars($product['slug'] ?? $product['product_id']) ?>" class="product-link">
+                        <a href="product.php?slug=<?= urlencode($product['slug'] ?? $product['product_id']) ?>" class="product-link">
                             <div class="product-image">
-                                <img src="assets/images/uploads/<?= htmlspecialchars($product['image_path'] ?? 'default-product.jpg') ?>" 
+                                <img src="assets/images/uploads/<?= htmlspecialchars($product['image_path'] ?? 'default-product.jpg') ?>"
                                      alt="<?= htmlspecialchars($product['title']) ?>" loading="lazy">
-                                <span class="product-condition"><?= htmlspecialchars($product['condition_status']) ?></span>
+                                <span class="product-condition"><?= ucfirst(htmlspecialchars($product['condition_status'])) ?></span>
                                 <button class="favorite-btn" data-product-id="<?= $product['product_id'] ?>">
                                     <i class="far fa-heart"></i>
                                 </button>
@@ -78,7 +81,7 @@ $products = $stmt->fetchAll();
                             <div class="product-info">
                                 <h3 class="product-title"><?= htmlspecialchars($product['title']) ?></h3>
                                 <div class="product-meta">
-                                    <span class="product-price">$<?= number_format($product['price'], 2) ?></span>
+                                    <span class="product-price">ZMW <?= number_format($product['price'], 2) ?></span>
                                     <span class="product-location"><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($product['location'] ?? 'Unknown') ?></span>
                                 </div>
                                 <div class="product-seller">
@@ -109,4 +112,4 @@ $products = $stmt->fetchAll();
     </div>
 </section>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

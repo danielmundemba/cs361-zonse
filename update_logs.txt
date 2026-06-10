@@ -1,4 +1,14 @@
 =======================================================================================================
+========================== Code Update 10.06.26 - Daniel Mundemba =====================================
+1. Fixed error "Cannot modify header information" by having the header include in all the files after 
+   the php logic before display html
+2. Added an admin side to manage the categories
+3. Added adding of an item by any user 
+4. Added viewing and editng of items by the seller and viewing by another user
+5. Added my listing to show a user all thier products up for sell and manage them
+6. Added messaging between seller and buyer 
+
+=======================================================================================================
 ========================== Code Update 06.05.26 - Baron Zulu =====================================
 1.finished the authetication page
 2. finished the categories 

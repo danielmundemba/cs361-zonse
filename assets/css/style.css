@@ -1504,3 +1504,49 @@ main {
 .names-row input {
     width: 100%;
 }
+
+/* ─── Admin Link Styling ─── */
+.dropdown-menu a.admin-link {
+    color: var(--accent);
+    font-weight: 600;
+}
+.dropdown-menu a.admin-link:hover {
+    background: var(--accent-glow);
+}
+.dropdown-menu a.admin-link i {
+    color: var(--accent);
+}
+
+.mobile-links a.admin-link {
+    color: var(--accent);
+    font-weight: 600;
+}
+.mobile-links a.admin-link:hover {
+    background: var(--accent-glow);
+}
+.mobile-links a.admin-link i {
+    color: var(--accent);
+}
+
+.toast-notification {
+    position: fixed;
+    top: calc(var(--nav-height) + 16px);
+    right: 16px;
+    z-index: 9999;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 360px;
+}
+.toast-success { border-color: rgba(0, 212, 170, 0.3); color: var(--accent); }
+.toast-error { border-color: rgba(255, 107, 107, 0.3); color: #ff6b6b; }

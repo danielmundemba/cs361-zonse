@@ -1,8 +1,7 @@
 <?php
-$pageTitle = 'Categories';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/auth.php';
 
-// Fetch categories with active listing counts
+// ─── Fetch categories with listing counts ───
 $stmt = $pdo->query("
     SELECT c.*, COUNT(p.product_id) AS listing_count
     FROM categories c
@@ -11,6 +10,9 @@ $stmt = $pdo->query("
     ORDER BY c.display_order, c.name
 ");
 $categories = $stmt->fetchAll();
+
+$pageTitle = 'Categories';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <section class="categories-section categories-page">
@@ -27,7 +29,7 @@ $categories = $stmt->fetchAll();
         <?php else: ?>
             <div class="categories-grid">
                 <?php foreach ($categories as $cat): ?>
-                   <a href="category.php?slug=<?= urlencode(strtolower(str_replace(' ', '-', $cat['name']))) ?>" class="category-card">
+                    <a href="category.php?slug=<?= urlencode(strtolower(str_replace(' ', '-', $cat['name']))) ?>" class="category-card">
                         <div class="category-icon">
                             <i class="fas <?= htmlspecialchars($cat['icon'] ?? 'fa-tag') ?>"></i>
                         </div>
@@ -43,9 +45,7 @@ $categories = $stmt->fetchAll();
 </section>
 
 <style>
-.categories-page {
-    padding-top: 40px;
-}
+.categories-page { padding-top: 40px; }
 .category-count {
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -54,4 +54,4 @@ $categories = $stmt->fetchAll();
 }
 </style>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

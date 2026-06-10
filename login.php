@@ -1,7 +1,7 @@
 <?php
-$pageTitle = 'Log In';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/auth.php';
 
+// ─── Redirect if already logged in ───
 if (isLoggedIn()) {
     header('Location: index.php');
     exit;
@@ -14,9 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCsrf()) {
         $error = 'Invalid request. Please try again.';
     } else {
-        $login = trim($_POST['login'] ?? '');
+        $login    = trim($_POST['login'] ?? '');
         $password = $_POST['password'] ?? '';
-        $result = loginUser($login, $password);
+        $result   = loginUser($login, $password);
         if ($result['success']) {
             $redirect = $_SESSION['redirect_after_login'] ?? 'index.php';
             unset($_SESSION['redirect_after_login']);
@@ -28,7 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$success = flash('success');
+$success   = flash('success');
+$pageTitle = 'Log In';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <section class="auth-section">
@@ -94,9 +96,7 @@ $success = flash('success');
             </button>
         </form>
 
-        <div class="auth-divider">
-            <span>or</span>
-        </div>
+        <div class="auth-divider"><span>or</span></div>
 
         <div class="auth-switch">
             Don't have an account? <a href="signup.php">Sign Up</a>
@@ -108,7 +108,7 @@ $success = flash('success');
 document.querySelectorAll('.toggle-password').forEach(btn => {
     btn.addEventListener('click', () => {
         const target = document.getElementById(btn.dataset.target);
-        const icon = btn.querySelector('i');
+        const icon   = btn.querySelector('i');
         if (target.type === 'password') {
             target.type = 'text';
             icon.classList.replace('fa-eye', 'fa-eye-slash');
@@ -120,4 +120,4 @@ document.querySelectorAll('.toggle-password').forEach(btn => {
 });
 </script>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

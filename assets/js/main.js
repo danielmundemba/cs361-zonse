@@ -1,280 +1,320 @@
-// Toggle password visibility
-function togglePassword(inputId, btn) {
-    const input = document.getElementById(inputId);
-    const icon = btn.querySelector('i');
-    
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-    } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-    }
-}
+/* ============================================
+   MARKETPLACE — MAIN JAVASCRIPT
+   ============================================ */
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // ===== MOBILE MENU =====
+document.addEventListener('DOMContentLoaded', function () {
+    initMobileMenu();
+    initFavorites();
+    initMessageSeller();   // ← was defined but never called before
+    initUnreadBadge();
+    initDropdowns();
+    initLazyImages();
+    initNavbarScroll();
+});
+
+/* ============================================
+   MOBILE MENU
+   ============================================ */
+
+function initMobileMenu() {
     const menuBtn = document.querySelector('.mobile-menu-btn');
-    const mobileMenu = document.querySelector('.mobile-menu');
-    const mobileOverlay = document.querySelector('.mobile-menu-overlay');
-    const mobileClose = document.querySelector('.mobile-close');
-    
+    const menu    = document.querySelector('.mobile-menu');
+    const overlay = document.querySelector('.mobile-menu-overlay');
+    const closeBtn = document.querySelector('.mobile-close');
+
+    if (!menuBtn || !menu) return;
+
     function openMenu() {
-        mobileMenu.classList.add('active');
-        mobileOverlay.classList.add('active');
+        menu.classList.add('active');
+        if (overlay) overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeMenu() {
-        mobileMenu.classList.remove('active');
-        mobileOverlay.classList.remove('active');
+        menu.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
         document.body.style.overflow = '';
     }
-    
-    if (menuBtn) menuBtn.addEventListener('click', openMenu);
-    if (mobileClose) mobileClose.addEventListener('click', closeMenu);
-    if (mobileOverlay) mobileOverlay.addEventListener('click', closeMenu);
-    
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && mobileMenu?.classList.contains('active')) {
-            closeMenu();
-        }
+
+    menuBtn.addEventListener('click', openMenu);
+    if (closeBtn)  closeBtn.addEventListener('click', closeMenu);
+    if (overlay)   overlay.addEventListener('click', closeMenu);
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && menu.classList.contains('active')) closeMenu();
     });
-    
-    // ===== PASSWORD TOGGLE =====
-    window.togglePassword = function(inputId, btn) {
-        const input = document.getElementById(inputId);
-        const icon = btn.querySelector('i');
-        
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
-    };
-    
-    // ===== SIGNUP LIVE VALIDATION =====
-    const signupForm = document.getElementById('signupForm');
-    if (signupForm) {
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const confirmInput = document.getElementById('confirm_password');
-        const termsCheckbox = document.getElementById('terms');
-        const submitBtn = document.getElementById('submitBtn');
-        
-        let usernameDebounce;
-        let usernameChecked = false;
-        let usernameAvailable = false;
-        
-        // Username live validation with debounce
-        if (usernameInput) {
-            usernameInput.addEventListener('input', function() {
-                const value = this.value.trim();
-                const group = document.getElementById('usernameGroup');
-                const status = document.getElementById('usernameStatus');
-                const error = document.getElementById('usernameError');
-                const hint = document.getElementById('usernameHint');
-                const checkUrl = this.dataset.checkUrl;
-                
-                clearTimeout(usernameDebounce);
-                usernameChecked = false;
-                
-                // Reset states
-                group.classList.remove('is-valid', 'is-invalid');
-                status.querySelectorAll('i').forEach(i => i.style.display = 'none');
-                error.innerHTML = '';
-                
-                // Empty check
-                if (!value) {
-                    hint.textContent = '3-30 characters, letters, numbers, underscores, hyphens';
-                    updateSubmitButton();
-                    return;
-                }
-                
-                // Format validation
-                const formatValid = /^[a-zA-Z0-9_-]{3,30}$/.test(value);
-                
-                if (!formatValid) {
-                    group.classList.add('is-invalid');
-                    status.querySelector('.fa-times').style.display = 'inline-block';
-                    hint.textContent = value.length < 3 ? 'Too short (min 3 chars)' : 'Invalid characters';
-                    updateSubmitButton();
-                    return;
-                }
-                
-                // Show loading
-                status.querySelector('.fa-spinner').style.display = 'inline-block';
-                hint.textContent = 'Checking availability...';
-                
-                // Debounce database check
-                usernameDebounce = setTimeout(() => {
-                    fetch(`${checkUrl}?username=${encodeURIComponent(value)}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            status.querySelector('.fa-spinner').style.display = 'none';
-                            usernameChecked = true;
-                            
-                            if (data.available) {
-                                group.classList.add('is-valid');
-                                group.classList.remove('is-invalid');
-                                status.querySelector('.fa-check').style.display = 'inline-block';
-                                hint.textContent = 'Username available!';
-                                usernameAvailable = true;
-                            } else {
-                                group.classList.add('is-invalid');
-                                group.classList.remove('is-valid');
-                                status.querySelector('.fa-times').style.display = 'inline-block';
-                                hint.textContent = data.message;
-                                usernameAvailable = false;
-                            }
-                            updateSubmitButton();
-                        })
-                        .catch(() => {
-                            status.querySelector('.fa-spinner').style.display = 'none';
-                            hint.textContent = 'Could not check. Try again.';
-                            updateSubmitButton();
-                        });
-                }, 500);
-            });
-        }
-        
-        // Password strength meter
-        if (passwordInput) {
-            passwordInput.addEventListener('input', function() {
-                const value = this.value;
-                const bars = document.querySelectorAll('.strength-bar span');
-                const text = document.querySelector('.strength-text');
-                
-                let strength = 0;
-                if (value.length >= 8) strength++;
-                if (value.length >= 12) strength++;
-                if (/[a-z]/.test(value) && /[A-Z]/.test(value)) strength++;
-                if (/[0-9]/.test(value)) strength++;
-                if (/[^A-Za-z0-9]/.test(value)) strength++;
-                
-                const classes = ['weak', 'fair', 'good', 'strong'];
-                const labels = ['Too weak', 'Weak', 'Good', 'Strong'];
-                
-                bars.forEach((bar, i) => {
-                    bar.className = '';
-                    if (i < Math.min(strength, 4)) {
-                        bar.classList.add(classes[Math.min(strength - 1, 3)]);
-                    }
-                });
-                
-                if (value.length === 0) {
-                    text.textContent = 'Password strength';
-                    text.className = 'strength-text';
-                } else {
-                    const idx = Math.min(strength - 1, 3);
-                    text.textContent = labels[idx] || 'Too weak';
-                    text.className = `strength-text ${classes[idx] || 'weak'}`;
-                }
-                
-                checkPasswordMatch();
-                updateSubmitButton();
-            });
-        }
-        
-        // Confirm password match
-        if (confirmInput) {
-            confirmInput.addEventListener('input', checkPasswordMatch);
-        }
-        
-        function checkPasswordMatch() {
-            const matchStatus = document.getElementById('matchStatus');
-            if (!matchStatus || !passwordInput || !confirmInput) return;
-            
-            const pass = passwordInput.value;
-            const confirm = confirmInput.value;
-            
-            matchStatus.querySelectorAll('i').forEach(i => i.style.display = 'none');
-            
-            if (!confirm) return;
-            
-            if (pass === confirm && pass.length >= 8) {
-                matchStatus.querySelector('.fa-check').style.display = 'inline-block';
-                confirmInput.parentElement.parentElement.classList.add('is-valid');
-                confirmInput.parentElement.parentElement.classList.remove('is-invalid');
-            } else {
-                matchStatus.querySelector('.fa-times').style.display = 'inline-block';
-                confirmInput.parentElement.parentElement.classList.add('is-invalid');
-                confirmInput.parentElement.parentElement.classList.remove('is-valid');
-            }
-        }
-        
-        // Terms checkbox
-        if (termsCheckbox) {
-            termsCheckbox.addEventListener('change', updateSubmitButton);
-        }
-        
-        // Enable/disable submit button
-        function updateSubmitButton() {
-            if (!submitBtn) return;
-            
-            const email = document.getElementById('email')?.value.trim();
-            const firstName = document.getElementById('first_name')?.value.trim();
-            const lastName = document.getElementById('last_name')?.value.trim();
-            const pass = passwordInput?.value;
-            const confirm = confirmInput?.value;
-            const terms = termsCheckbox?.checked;
-            
-            const allFilled = email && firstName && lastName && pass && confirm;
-            const passValid = pass && pass.length >= 8 && /[A-Za-z]/.test(pass) && /[0-9]/.test(pass);
-            const passMatch = pass === confirm && pass.length > 0;
-            const usernameReady = usernameChecked && usernameAvailable;
-            
-            submitBtn.disabled = !(allFilled && passValid && passMatch && usernameReady && terms);
-        }
-        
-        // Update on any input change
-        signupForm.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', updateSubmitButton);
-        });
-        
-        // Initial check
-        updateSubmitButton();
+}
+
+/* ============================================
+   MESSAGE SELLER — Start Chat from Product Page
+   startChat() is at module scope so product.php
+   can call it directly from its own DOMContentLoaded.
+   ============================================ */
+
+/* ============================================
+   MESSAGE SELLER — Event delegation
+   Catches the button no matter when it appears.
+   ============================================ */
+
+
+function _chatClickHandler(e) {
+    e.preventDefault();
+    const productId = this.dataset.productId;
+    if (productId) startChat(productId, this);
+}
+
+// Exported to window so inline calls in product.php also work
+function startChat(productId, btn) {
+    if (!productId) return;
+
+    const originalHtml = btn ? btn.innerHTML : '';
+
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting chat...';
+        btn.style.pointerEvents = 'none';
+        btn.disabled = true;
     }
-    
-    // ===== FAVORITE BUTTONS =====
-    document.querySelectorAll('.favorite-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
+
+    fetch('api/conversations.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'product_id=' + encodeURIComponent(productId)
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('Server error ' + r.status);
+        return r.json();
+    })
+    .then(data => {
+        if (data.success && data.conversation_id) {
+            window.location.href = 'messages.php?chat=' + encodeURIComponent(data.conversation_id);
+        } else {
+            showToast(data.error || 'Could not start chat. Please try again.', 'error');
+            if (btn) { btn.innerHTML = originalHtml; btn.style.pointerEvents = ''; btn.disabled = false; }
+        }
+    })
+    .catch(err => {
+        console.error('Chat error:', err);
+        showToast('Network error. Please check your connection.', 'error');
+        if (btn) { btn.innerHTML = originalHtml; btn.style.pointerEvents = ''; btn.disabled = false; }
+    });
+}
+
+// Make startChat globally accessible for any inline calls
+window.startChat = startChat;
+
+/* ============================================
+   FAVORITES / WISHLIST
+   ============================================ */
+
+function initFavorites() {
+    document.querySelectorAll('.favorite-btn, .fav-overlay-btn, .btn-fav').forEach(btn => {
+        if (btn.dataset.favInit) return;
+        btn.dataset.favInit = 'true';
+        btn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            
-            const icon = this.querySelector('i');
-            this.classList.toggle('active');
-            
-            if (this.classList.contains('active')) {
-                icon.classList.remove('far');
-                icon.classList.add('fas');
-            } else {
-                icon.classList.remove('fas');
-                icon.classList.add('far');
-            }
-            
             const productId = this.dataset.productId;
-            console.log('Toggle favorite for product:', productId);
+            if (productId) toggleFavorite(productId, this);
         });
     });
-    
-    // ===== NAVBAR SCROLL =====
-    const navbar = document.querySelector('.navbar');
-    if (navbar) {
-        window.addEventListener('scroll', function() {
-            if (window.pageYOffset > 50) {
-                navbar.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
+}
+
+function toggleFavorite(productId, btn) {
+    if (!productId) return;
+
+    const wasActive = btn.classList.contains('active');
+
+    // Optimistic UI update
+    _setFavState(productId, !wasActive);
+
+    fetch('api/favorites.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'product_id=' + encodeURIComponent(productId)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            _setFavState(productId, data.action === 'added');
+        } else {
+            _setFavState(productId, wasActive); // revert
+        }
+    })
+    .catch(() => {
+        _setFavState(productId, wasActive); // revert on network error
+    });
+}
+
+function _setFavState(productId, active) {
+    document.querySelectorAll(`[data-product-id="${productId}"]`).forEach(b => {
+        // Only fav-type buttons, not the message button
+        if (!b.classList.contains('favorite-btn') &&
+            !b.classList.contains('fav-overlay-btn') &&
+            !b.classList.contains('btn-fav')) return;
+
+        b.classList.toggle('active', active);
+        const icon = b.querySelector('i');
+        if (icon) icon.className = active ? 'fas fa-heart' : 'far fa-heart';
+        const label = b.querySelector('span');
+        if (label) label.textContent = active ? 'Saved' : 'Save';
+    });
+}
+
+// Make toggleFavorite globally accessible
+window.toggleFavorite = toggleFavorite;
+
+/* ============================================
+   UNREAD MESSAGE BADGE (Navbar)
+   ============================================ */
+
+function initUnreadBadge() {
+    const badge = document.getElementById('navMsgBadge');
+    if (!badge) return;
+    updateUnreadCount();
+    setInterval(updateUnreadCount, 10000);
+}
+
+function updateUnreadCount() {
+    const badge = document.getElementById('navMsgBadge');
+    if (!badge) return;
+
+    fetch('api/unread_count.php')
+        .then(r => r.json())
+        .then(data => {
+            const count = parseInt(data.count) || 0;
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'flex';
+                badge.classList.add('has-unread');
             } else {
-                navbar.style.boxShadow = 'none';
+                badge.style.display = 'none';
+                badge.classList.remove('has-unread');
+            }
+        })
+        .catch(() => {});
+}
+
+/* ============================================
+   DROPDOWNS
+   ============================================ */
+
+function initDropdowns() {
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.user-dropdown') && !e.target.closest('.mobile-menu-btn')) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+        }
+    });
+
+    document.querySelectorAll('.mobile-links a').forEach(link => {
+        link.addEventListener('click', () => {
+            document.querySelector('.mobile-menu')?.classList.remove('active');
+            document.querySelector('.mobile-menu-overlay')?.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    });
+}
+
+/* ============================================
+   NAVBAR SCROLL SHADOW
+   ============================================ */
+
+function initNavbarScroll() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+    window.addEventListener('scroll', function () {
+        navbar.style.boxShadow = window.pageYOffset > 50
+            ? '0 4px 20px rgba(0,0,0,0.3)'
+            : 'none';
+    }, { passive: true });
+}
+
+/* ============================================
+   LAZY IMAGES
+   ============================================ */
+
+function initLazyImages() {
+    if (!('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                if (img.dataset.src) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+                obs.unobserve(img);
             }
         });
-    }
-    
-});
+    }, { rootMargin: '50px' });
+    document.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+
+function showToast(message, type = 'info') {
+    document.querySelectorAll('.toast-notification').forEach(t => t.remove());
+
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.style.cssText = `
+        position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+        display: flex; align-items: center; gap: 10px;
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: var(--radius-md); padding: 14px 18px;
+        box-shadow: var(--shadow-lg); font-size: 0.9rem; font-weight: 500;
+        transform: translateX(120%); opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        max-width: 320px;
+    `;
+    if (type === 'error') toast.style.borderColor = 'rgba(255,107,107,0.4)';
+    if (type === 'success') toast.style.borderColor = 'rgba(0,212,170,0.4)';
+
+    const color = type === 'error' ? '#ff6b6b' : type === 'success' ? 'var(--accent)' : 'var(--text-secondary)';
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}" style="color:${color}"></i><span>${escapeHtml(message)}</span>`;
+
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; toast.style.opacity = '1'; });
+    setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
+
+window.showToast = showToast;
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+function throttle(func, limit) {
+    let inThrottle;
+    return function (...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+window.debounce  = debounce;
+window.throttle  = throttle;
+window.escapeHtml = escapeHtml;
+
+// Make startChat globally accessible
+window.startChat = startChat;

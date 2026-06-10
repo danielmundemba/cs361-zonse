@@ -1,14 +1,14 @@
 <?php
-$pageTitle = 'Sign Up';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/auth.php';
 
+// ─── Redirect if already logged in ───
 if (isLoggedIn()) {
     header('Location: index.php');
     exit;
 }
 
 $errors = [];
-$old = [];
+$old    = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCsrf()) {
@@ -21,10 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             $errors = $result['errors'];
-            $old = $_POST;
+            $old    = $_POST;
         }
     }
 }
+
+$pageTitle = 'Sign Up';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <section class="auth-section">
@@ -104,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="phone">Phone <span class="optional">(optional)</span></label>
                 <div class="input-wrapper">
                     <i class="fas fa-phone"></i>
-                    <input type="tel" id="phone" name="phone" placeholder="+1 234 567 8900"
+                    <input type="tel" id="phone" name="phone" placeholder="+260 97 123 4567"
                            value="<?= htmlspecialchars($old['phone'] ?? '') ?>" autocomplete="tel">
                 </div>
                 <?php if (isset($errors['phone'])): ?>
@@ -116,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="location">Location <span class="optional">(optional)</span></label>
                 <div class="input-wrapper">
                     <i class="fas fa-map-marker-alt"></i>
-                    <input type="text" id="location" name="location" placeholder="City, State"
+                    <input type="text" id="location" name="location" placeholder="e.g. Lusaka, Kitwe"
                            value="<?= htmlspecialchars($old['location'] ?? '') ?>" autocomplete="address-level2">
                 </div>
             </div>
@@ -173,9 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </button>
         </form>
 
-        <div class="auth-divider">
-            <span>or</span>
-        </div>
+        <div class="auth-divider"><span>or</span></div>
 
         <div class="auth-switch">
             Already have an account? <a href="login.php">Log In</a>
@@ -184,11 +185,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </section>
 
 <script>
-/* Toggle password visibility */
 document.querySelectorAll('.toggle-password').forEach(btn => {
     btn.addEventListener('click', () => {
         const target = document.getElementById(btn.dataset.target);
-        const icon = btn.querySelector('i');
+        const icon   = btn.querySelector('i');
         if (target.type === 'password') {
             target.type = 'text';
             icon.classList.replace('fa-eye', 'fa-eye-slash');
@@ -199,7 +199,6 @@ document.querySelectorAll('.toggle-password').forEach(btn => {
     });
 });
 
-/* Password strength meter */
 const passwordInput = document.getElementById('password');
 const strengthBox   = document.getElementById('password-strength');
 const strengthBars  = strengthBox.querySelectorAll('.strength-bar span');
@@ -207,18 +206,15 @@ const strengthText  = strengthBox.querySelector('.strength-text');
 
 passwordInput.addEventListener('input', () => {
     const val = passwordInput.value;
-    if (!val.length) {
-        strengthBox.style.display = 'none';
-        return;
-    }
+    if (!val.length) { strengthBox.style.display = 'none'; return; }
     strengthBox.style.display = 'flex';
 
     let score = 0;
-    if (val.length >= 8)  score++;
-    if (val.length >= 12) score++;
-    if (/[A-Z]/.test(val)) score++;
-    if (/[0-9]/.test(val)) score++;
-    if (/[^A-Za-z0-9]/.test(val)) score++;
+    if (val.length >= 8)           score++;
+    if (val.length >= 12)          score++;
+    if (/[A-Z]/.test(val))         score++;
+    if (/[0-9]/.test(val))         score++;
+    if (/[^A-Za-z0-9]/.test(val))  score++;
 
     const levels = ['weak', 'fair', 'good', 'strong'];
     let level = 0;
@@ -230,10 +226,9 @@ passwordInput.addEventListener('input', () => {
         bar.className = '';
         if (i <= level) bar.classList.add(levels[level]);
     });
-
     strengthText.textContent = levels[level].charAt(0).toUpperCase() + levels[level].slice(1);
-    strengthText.className = 'strength-text ' + levels[level];
+    strengthText.className   = 'strength-text ' + levels[level];
 });
 </script>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
