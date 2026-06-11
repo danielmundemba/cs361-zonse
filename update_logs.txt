@@ -1,3 +1,18 @@
+commit 1:
+feat(profile): add public profile page
+
+- Display user info, stats, and active listings by username
+- Reuse existing product-card grid and CSS components
+- Add message-seller integration for logged-in users
+
+commit 2:
+feat(profile): add edit profile page with image upload
+
+- Edit first_name, last_name, email, phone, location
+- Optional password change with verification
+- Profile picture upload with preview, resize, and cleanup
+- Update session data immediately after save
+
 =======================================================================================================
 ========================== Code Update 10.06.26 - Daniel Mundemba =====================================
 1. Fixed error "Cannot modify header information" by having the header include in all the files after 
