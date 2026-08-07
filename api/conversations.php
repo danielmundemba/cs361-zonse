@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/functions.php'; // needed for timeAgo()
+require_once __DIR__ . '/../includes/functions.php';
 header('Content-Type: application/json');
 
 if (!isLoggedIn()) {
@@ -11,7 +11,6 @@ if (!isLoggedIn()) {
 
 $currentUserId = (int)$_SESSION['user_id'];
 
-// ─── GET: List user's conversations ───
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt = $pdo->prepare("
         SELECT
@@ -58,7 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// ─── POST: Create or get existing conversation ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $productId = (int)($_POST['product_id'] ?? 0);
 
@@ -84,7 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Return existing conversation if one exists
     $check = $pdo->prepare("
         SELECT conversation_id FROM conversations
         WHERE product_id = ? AND buyer_id = ? AND seller_id = ?
@@ -97,7 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Create new
     $pdo->prepare("INSERT INTO conversations (product_id, buyer_id, seller_id) VALUES (?, ?, ?)")
         ->execute([$productId, $buyerId, $sellerId]);
 

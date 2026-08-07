@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 
-// ─── Fetch product by slug ───
 $slug = trim($_GET['slug'] ?? '');
 if (empty($slug)) {
     header('Location: index.php');
@@ -26,12 +25,10 @@ if (!$product) {
     exit;
 }
 
-// ─── Fetch all images ───
 $imgStmt = $pdo->prepare("SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC");
 $imgStmt->execute([$product['product_id']]);
 $images = $imgStmt->fetchAll();
 
-// ─── Fetch more from same seller (exclude current) ───
 $moreStmt = $pdo->prepare("
     SELECT p.*, pi.image_path
     FROM products p
@@ -43,7 +40,6 @@ $moreStmt = $pdo->prepare("
 $moreStmt->execute([$product['seller_id'], $product['product_id']]);
 $moreBySeller = $moreStmt->fetchAll();
 
-// ─── Handle favorite toggle ───
 $isFavorited = false;
 if (isLoggedIn()) {
     $favCheck = $pdo->prepare("SELECT 1 FROM favorites WHERE user_id = ? AND product_id = ?");
@@ -59,7 +55,6 @@ require_once __DIR__ . '/includes/header.php';
 <section class="product-view-section">
     <div class="container">
 
-        <!-- Breadcrumb -->
         <nav class="breadcrumb">
             <a href="index.php"><i class="fas fa-home"></i></a>
             <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
@@ -70,7 +65,6 @@ require_once __DIR__ . '/includes/header.php';
 
         <div class="product-layout">
 
-            <!-- ── LEFT: Gallery ── -->
             <div class="gallery-col">
                 <div class="main-image-wrap">
                     <img id="mainImage"
@@ -105,7 +99,6 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endif; ?>
             </div>
 
-            <!-- ── RIGHT: Details ── -->
             <div class="details-col">
 
                 <div class="details-top">
@@ -129,13 +122,11 @@ require_once __DIR__ . '/includes/header.php';
                     </span>
                 </div>
 
-                <!-- Description -->
                 <div class="description-block">
                     <h3>Description</h3>
                     <p><?= nl2br(htmlspecialchars($product['description'])) ?></p>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="action-row">
                     <?php if (!isLoggedIn()): ?>
                         <a href="login.php" class="btn-contact">
@@ -158,7 +149,6 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                 </div>
 
-                <!-- Seller Card -->
                 <div class="seller-card">
                     <div class="seller-avatar-wrap">
                         <img src="assets/images/profiles/<?= htmlspecialchars($product['profile_image'] ?? 'default.jpg') ?>"
@@ -182,7 +172,6 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <!-- More from this seller -->
         <?php if (!empty($moreBySeller)): ?>
             <div class="more-section">
                 <div class="section-header">
@@ -222,7 +211,6 @@ require_once __DIR__ . '/includes/header.php';
     padding: 32px 0 80px;
 }
 
-/* Breadcrumb */
 .breadcrumb {
     display: flex;
     align-items: center;
@@ -246,7 +234,6 @@ require_once __DIR__ . '/includes/header.php';
     text-overflow: ellipsis;
 }
 
-/* Two-column layout */
 .product-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -255,7 +242,6 @@ require_once __DIR__ . '/includes/header.php';
     margin-bottom: 64px;
 }
 
-/* Gallery */
 .gallery-col { position: sticky; top: calc(var(--nav-height) + 20px); }
 
 .main-image-wrap {
@@ -328,7 +314,6 @@ require_once __DIR__ . '/includes/header.php';
 .thumb:hover { border-color: var(--accent); }
 .thumb.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
 
-/* Details column */
 .details-top {
     display: flex;
     align-items: center;
@@ -398,7 +383,6 @@ require_once __DIR__ . '/includes/header.php';
     font-size: 0.95rem;
 }
 
-/* Action buttons */
 .action-row {
     display: flex;
     gap: 12px;
@@ -453,7 +437,6 @@ require_once __DIR__ . '/includes/header.php';
     color: #ff6b6b;
 }
 
-/* Seller card */
 .seller-card {
     display: flex;
     align-items: center;
@@ -495,10 +478,8 @@ require_once __DIR__ . '/includes/header.php';
 }
 .view-profile-btn:hover { gap: 10px; }
 
-/* More from seller */
 .more-section { padding-top: 16px; }
 
-/* Responsive */
 @media (max-width: 900px) {
     .product-layout {
         grid-template-columns: 1fr;
@@ -514,14 +495,12 @@ require_once __DIR__ . '/includes/header.php';
 </style>
 
 <script>
-// ── Image gallery ──
 function switchImage(btn, src) {
     document.getElementById('mainImage').src = src;
     document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 }
 
-// ── Message Seller ──
 function messageSeller(btn, productId) {
     const original = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting chat...';
@@ -549,13 +528,11 @@ function messageSeller(btn, productId) {
     });
 }
 
-// ── Favorites ──
 function toggleFav(btn, productId) {
     const wasActive = btn.classList.contains('active');
     const icon  = btn.querySelector('i');
     const label = btn.querySelector('span');
 
-    // Optimistic update
     btn.classList.toggle('active', !wasActive);
     if (icon)  icon.className  = wasActive ? 'far fa-heart' : 'fas fa-heart';
     if (label) label.textContent = wasActive ? 'Save' : 'Saved';
@@ -568,7 +545,6 @@ function toggleFav(btn, productId) {
     .then(r => r.json())
     .then(data => {
         if (!data.success) {
-            // Revert on failure
             btn.classList.toggle('active', wasActive);
             if (icon)  icon.className  = wasActive ? 'fas fa-heart' : 'far fa-heart';
             if (label) label.textContent = wasActive ? 'Saved' : 'Save';

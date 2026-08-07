@@ -1,7 +1,4 @@
 <?php
-// auth.php already required by every page before this is included.
-// We only need functions.php here for helpers used in the nav (timeAgo etc.)
-// Use require_once so it's safe even if a page already loaded it.
 if (!function_exists('timeAgo')) {
     require_once __DIR__ . '/functions.php';
 }
@@ -15,7 +12,6 @@ if (!function_exists('timeAgo')) {
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/media.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- main.js loaded last so it runs after full DOM is parsed -->
     <script src="assets/js/main.js" defer></script>
 </head>
 <body>

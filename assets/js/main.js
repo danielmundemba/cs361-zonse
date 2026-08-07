@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     initMobileMenu();
     initFavorites();
-    initMessageSeller();   // ← was defined but never called before
+    initMessageSeller();  
     initUnreadBadge();
     initDropdowns();
     initLazyImages();
@@ -46,14 +46,7 @@ function initMobileMenu() {
 }
 
 /* ============================================
-   MESSAGE SELLER — Start Chat from Product Page
-   startChat() is at module scope so product.php
-   can call it directly from its own DOMContentLoaded.
-   ============================================ */
-
-/* ============================================
-   MESSAGE SELLER — Event delegation
-   Catches the button no matter when it appears.
+   MESSAGE SELLER
    ============================================ */
 
 
@@ -63,7 +56,6 @@ function _chatClickHandler(e) {
     if (productId) startChat(productId, this);
 }
 
-// Exported to window so inline calls in product.php also work
 function startChat(productId, btn) {
     if (!productId) return;
 
@@ -99,7 +91,6 @@ function startChat(productId, btn) {
     });
 }
 
-// Make startChat globally accessible for any inline calls
 window.startChat = startChat;
 
 /* ============================================
@@ -124,7 +115,6 @@ function toggleFavorite(productId, btn) {
 
     const wasActive = btn.classList.contains('active');
 
-    // Optimistic UI update
     _setFavState(productId, !wasActive);
 
     fetch('api/favorites.php', {
@@ -137,17 +127,16 @@ function toggleFavorite(productId, btn) {
         if (data.success) {
             _setFavState(productId, data.action === 'added');
         } else {
-            _setFavState(productId, wasActive); // revert
+            _setFavState(productId, wasActive);
         }
     })
     .catch(() => {
-        _setFavState(productId, wasActive); // revert on network error
+        _setFavState(productId, wasActive); 
     });
 }
 
 function _setFavState(productId, active) {
     document.querySelectorAll(`[data-product-id="${productId}"]`).forEach(b => {
-        // Only fav-type buttons, not the message button
         if (!b.classList.contains('favorite-btn') &&
             !b.classList.contains('fav-overlay-btn') &&
             !b.classList.contains('btn-fav')) return;
@@ -160,7 +149,6 @@ function _setFavState(productId, active) {
     });
 }
 
-// Make toggleFavorite globally accessible
 window.toggleFavorite = toggleFavorite;
 
 /* ============================================
@@ -316,5 +304,4 @@ window.debounce  = debounce;
 window.throttle  = throttle;
 window.escapeHtml = escapeHtml;
 
-// Make startChat globally accessible
 window.startChat = startChat;

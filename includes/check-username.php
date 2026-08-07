@@ -1,5 +1,4 @@
 <?php
-// check-username.php — AJAX endpoint for username availability
 
 require_once 'includes/db.php';
 

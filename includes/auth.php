@@ -1,8 +1,4 @@
     <?php
-    /**
-     * Authentication Backend — includes/auth.php
-     * Provides: CSRF protection, registration, login, logout, session helpers
-     */
 
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -10,7 +6,6 @@
 
     require_once __DIR__ . '/db.php';
 
-    /* ─── CSRF ─── */
     function csrfToken(): string {
         if (empty($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -23,7 +18,6 @@
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
 
-    /* ─── Session / Auth State ─── */
     function isLoggedIn(): bool {
         return isset($_SESSION['user_id']) && $_SESSION['user_id'] > 0;
     }
@@ -44,7 +38,6 @@
         return $stmt->fetch() ?: null;
     }
 
-    /* ─── Registration ─── */
     function register(array $data): array {
         $errors = [];
 
@@ -115,7 +108,6 @@
         }
     }
 
-    /* ─── Login ─── */
     function loginUser(string $login, string $password): array {
         global $pdo;
 
@@ -138,7 +130,6 @@
         return ['success' => true, 'error' => null];
     }
 
-    /* ─── Logout ─── */
     function logoutUser(): void {
         $_SESSION = [];
         $params = session_get_cookie_params();
@@ -152,8 +143,6 @@
         ]);
         session_destroy();
     }
-
-    /* ─── Flash Messages ─── */
     function flash(string $type, string $message = null): ?string {
         if ($message !== null) {
             $_SESSION['flash_' . $type] = $message;

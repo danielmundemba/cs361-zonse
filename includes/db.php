@@ -1,5 +1,4 @@
 <?php
-// includes/db.php — PDO connection
 
 $host = 'localhost';
 $db   = 'zonse';

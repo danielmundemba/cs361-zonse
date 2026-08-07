@@ -1,6 +1,6 @@
 CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,      -- Internal only, never in URLs
-    username VARCHAR(30) UNIQUE NOT NULL,         -- Public identifier
+    user_id INT AUTO_INCREMENT PRIMARY KEY,     
+    username VARCHAR(30) UNIQUE NOT NULL,        
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE users (
 CREATE TABLE categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    icon VARCHAR(50),              -- FontAwesome icon class
+    icon VARCHAR(50),              
     display_order INT DEFAULT 0
 );
 
@@ -26,7 +26,7 @@ CREATE TABLE categories (
 -- Products/Listing table
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
-    slug VARCHAR(100) UNIQUE NOT NULL,            -- Public URL identifier
+    slug VARCHAR(100) UNIQUE NOT NULL,          
     seller_id INT NOT NULL,
     category_id INT,
     title VARCHAR(200) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE products (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (seller_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(category_id),
-    INDEX idx_slug (slug),                        -- Fast slug lookups
+    INDEX idx_slug (slug),                    
     INDEX idx_category (category_id),
     INDEX idx_seller (seller_id),
     INDEX idx_status (status),
@@ -60,7 +60,7 @@ CREATE TABLE messages (
     message_id INT AUTO_INCREMENT PRIMARY KEY,
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
-    product_id INT,                -- Optional: message about specific product
+    product_id INT,               
     content TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

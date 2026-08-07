@@ -4,7 +4,6 @@ requireLogin();
 
 $currentUserId = (int)$_SESSION['user_id'];
 
-// ─── Fetch all conversations ───
 $stmt = $pdo->prepare("
     SELECT
         c.conversation_id,

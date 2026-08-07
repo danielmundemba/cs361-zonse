@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 
-// ─── Fetch categories with listing counts ───
 $stmt = $pdo->query("
     SELECT c.*, COUNT(p.product_id) AS listing_count
     FROM categories c

@@ -10,7 +10,6 @@ if ($productId <= 0) {
     exit;
 }
 
-// ─── Fetch product and verify ownership ───
 $stmt = $pdo->prepare("
     SELECT p.*, c.category_id
     FROM products p
@@ -22,29 +21,24 @@ $stmt->execute([$productId, $userId]);
 $product = $stmt->fetch();
 
 if (!$product) {
-    // Product doesn't exist or belongs to someone else
     flash('error', 'Listing not found or you do not have permission to edit it.');
     header('Location: my-listings.php');
     exit;
 }
 
-// ─── Fetch categories ───
 $catStmt = $pdo->query("SELECT category_id, name FROM categories ORDER BY name");
 $categories = $catStmt->fetchAll();
 
-// ─── Fetch existing images ───
 $imgStmt = $pdo->prepare("SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC");
 $imgStmt->execute([$productId]);
 $existingImages = $imgStmt->fetchAll();
 
 require_once __DIR__ . '/includes/functions.php';
 
-// ─── Handle form submission ───
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // ─── Delete specific images ───
     if (!empty($_POST['delete_images']) && is_array($_POST['delete_images'])) {
         foreach ($_POST['delete_images'] as $imgId) {
             $imgId = (int)$imgId;
@@ -57,10 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare("DELETE FROM product_images WHERE image_id = ?")->execute([$imgId]);
             }
         }
-        // Reload images after deletion
         $imgStmt->execute([$productId]);
         $existingImages = $imgStmt->fetchAll();
-        // Ensure one is primary
+
         if (!empty($existingImages)) {
             $hasPrimary = array_filter($existingImages, fn($i) => $i['is_primary']);
             if (empty($hasPrimary)) {
@@ -77,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoryId      = (int)($_POST['category_id'] ?? 0);
     $location        = trim($_POST['location'] ?? '');
 
-    // ─── Validation ───
     if (strlen($title) < 3)                                         $errors[] = 'Title must be at least 3 characters.';
     if (strlen($description) < 10)                                  $errors[] = 'Description must be at least 10 characters.';
     if (!is_numeric($price) || $price <= 0)                         $errors[] = 'Please enter a valid price greater than 0.';
@@ -85,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($categoryId <= 0)                                            $errors[] = 'Please select a category.';
     if (empty($location))                                            $errors[] = 'Please enter a location.';
 
-    // Check remaining + new images >= 1
     $remainingCount = count($existingImages);
     $newImages = $_FILES['images'] ?? [];
     $hasNewImages = !empty($newImages['name'][0]);
@@ -94,7 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // ─── Regenerate slug only if title changed ───
         $slug = $product['slug'];
         if ($title !== $product['title']) {
             $baseSlug = slugify($title);
@@ -108,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // ─── Update product ───
         $pdo->prepare("
             UPDATE products
             SET slug = ?, title = ?, description = ?, price = ?,
@@ -116,13 +105,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE product_id = ?
         ")->execute([$slug, $title, $description, $price, $conditionStatus, $categoryId, $location, $productId]);
 
-        // ─── Handle new image uploads ───
         if ($hasNewImages) {
             $uploadDir    = __DIR__ . '/assets/images/uploads/';
             $allowedTypes = ['image/jpeg','image/png','image/webp'];
             $maxSize      = 5 * 1024 * 1024;
 
-            // If no images remain, first upload becomes primary
             $makeFirstPrimary = ($remainingCount === 0);
 
             foreach ($newImages['tmp_name'] as $index => $tmpName) {
@@ -147,7 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Re-use POST values on error
     $product['title']            = $_POST['title'] ?? $product['title'];
     $product['description']      = $_POST['description'] ?? $product['description'];
     $product['price']            = $_POST['price'] ?? $product['price'];
@@ -156,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product['location']         = $_POST['location'] ?? $product['location'];
 }
 
-// ─── Safe to output HTML ───
 $pageTitle = 'Edit Listing';
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -194,7 +179,6 @@ require_once __DIR__ . '/includes/header.php';
               enctype="multipart/form-data"
               class="auth-form">
 
-            <!-- Title -->
             <div class="form-group">
                 <label for="title">Item Title <span style="color:#ff6b6b;">*</span></label>
                 <div class="input-wrapper">
@@ -205,7 +189,6 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
 
-            <!-- Category & Condition -->
             <div class="form-row">
                 <div class="form-group">
                     <label for="category_id">Category <span style="color:#ff6b6b;">*</span></label>
@@ -243,7 +226,6 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
 
-            <!-- Price & Location -->
             <div class="form-row">
                 <div class="form-group">
                     <label for="price">Price (ZMW) <span style="color:#ff6b6b;">*</span></label>
@@ -266,7 +248,6 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
 
-            <!-- Description -->
             <div class="form-group">
                 <label for="description">Description <span style="color:#ff6b6b;">*</span></label>
                 <textarea id="description" name="description" rows="5"
@@ -274,7 +255,6 @@ require_once __DIR__ . '/includes/header.php';
                           style="resize:vertical; min-height:120px;"><?= htmlspecialchars($product['description']) ?></textarea>
             </div>
 
-            <!-- Existing Images -->
             <?php if (!empty($existingImages)): ?>
                 <div class="form-group">
                     <label>Current Images</label>
@@ -302,7 +282,6 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             <?php endif; ?>
 
-            <!-- Add New Images -->
             <div class="form-group">
                 <label>Add More Images</label>
                 <div class="file-upload" id="dropZone">
@@ -315,7 +294,6 @@ require_once __DIR__ . '/includes/header.php';
                 <div id="previewContainer" class="image-preview-grid"></div>
             </div>
 
-            <!-- Actions -->
             <div style="display:flex; gap:12px; margin-top:4px;">
                 <button type="submit" class="btn-auth" style="flex:1;">
                     <i class="fas fa-check"></i> Save Changes
@@ -451,15 +429,12 @@ select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-g
 </style>
 
 <script>
-// ── Mark existing images for removal ──
 function markForRemoval(checkbox) {
     const item = document.getElementById('existing-' + checkbox.value.replace(/[^0-9]/g,''));
-    // Find parent .existing-img-item
     const parent = checkbox.closest('.existing-img-item');
     parent.classList.toggle('marked-removal', checkbox.checked);
 }
 
-// ── New image drag & drop ──
 const dropZone         = document.getElementById('dropZone');
 const fileInput        = document.getElementById('images');
 const previewContainer = document.getElementById('previewContainer');

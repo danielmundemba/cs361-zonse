@@ -10,7 +10,6 @@ if ($conversationId <= 0) {
     exit;
 }
 
-// ─── Verify user is part of this conversation and load details ───
 $stmt = $pdo->prepare("
     SELECT
         c.*,
@@ -36,18 +35,15 @@ $stmt->execute([$currentUserId, $currentUserId, $conversationId, $currentUserId,
 $chat = $stmt->fetch();
 
 if (!$chat) {
-    // Not found or no access
     header('Location: conversations.php');
     exit;
 }
 
-// ─── Mark incoming messages as read ───
 $pdo->prepare("
     UPDATE messages SET is_read = 1
     WHERE conversation_id = ? AND sender_id != ? AND is_read = 0
 ")->execute([$conversationId, $currentUserId]);
 
-// ─── Load initial messages ───
 $msgStmt = $pdo->prepare("
     SELECT m.*, u.username, u.full_name, u.profile_image
     FROM messages m
@@ -60,7 +56,6 @@ $messages = $msgStmt->fetchAll();
 
 require_once __DIR__ . '/includes/functions.php';
 
-// Last message ID for polling
 $lastMessageId = !empty($messages) ? (int)end($messages)['message_id'] : 0;
 
 $pageTitle = 'Chat with ' . htmlspecialchars($chat['other_full_name']);
@@ -69,7 +64,6 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="chat-page">
 
-    <!-- ─── HEADER ─── -->
     <div class="chat-topbar">
         <a href="conversations.php" class="chat-back">
             <i class="fas fa-arrow-left"></i>
@@ -88,7 +82,6 @@ require_once __DIR__ . '/includes/header.php';
             </span>
         </div>
 
-        <!-- Product pill -->
         <a href="product.php?slug=<?= urlencode($chat['product_slug']) ?>" class="chat-product-pill" title="View listing">
             <img src="assets/images/uploads/<?= htmlspecialchars($chat['product_image'] ?? 'default-product.jpg') ?>"
                  alt="<?= htmlspecialchars($chat['product_title']) ?>">
@@ -100,7 +93,6 @@ require_once __DIR__ . '/includes/header.php';
         </a>
     </div>
 
-    <!-- ─── MESSAGES ─── -->
     <div class="chat-body" id="chatBody">
         <div class="chat-messages" id="chatMessages">
 
@@ -142,7 +134,6 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </div>
 
-    <!-- ─── INPUT ─── -->
     <div class="chat-footer">
         <div class="chat-input-wrap" id="chatInputWrap">
             <textarea
@@ -160,7 +151,6 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <style>
-/* ─── Reset main padding since we're full-viewport ─── */
 main { padding-top: 0 !important; }
 
 .chat-page {
@@ -172,7 +162,6 @@ main { padding-top: 0 !important; }
     overflow: hidden;
 }
 
-/* ── Topbar ── */
 .chat-topbar {
     display: flex;
     align-items: center;
@@ -229,7 +218,6 @@ main { padding-top: 0 !important; }
     color: var(--accent);
 }
 
-/* Product pill */
 .chat-product-pill {
     display: flex;
     align-items: center;
@@ -276,7 +264,6 @@ main { padding-top: 0 !important; }
     flex-shrink: 0;
 }
 
-/* ── Messages body ── */
 .chat-body {
     flex: 1;
     overflow-y: auto;
@@ -292,7 +279,6 @@ main { padding-top: 0 !important; }
     justify-content: flex-end;
 }
 
-/* Date separator */
 .chat-date-sep {
     display: flex;
     align-items: center;
@@ -311,7 +297,6 @@ main { padding-top: 0 !important; }
     font-weight: 600;
 }
 
-/* Conversation start hint */
 .chat-start-hint {
     text-align: center;
     padding: 40px 24px;
@@ -332,7 +317,6 @@ main { padding-top: 0 !important; }
 }
 .chat-start-hint span { font-size: 0.82rem; }
 
-/* Message rows */
 .msg-row {
     display: flex;
     align-items: flex-end;
@@ -348,7 +332,6 @@ main { padding-top: 0 !important; }
 .msg-mine  { flex-direction: row-reverse; }
 .msg-theirs { flex-direction: row; }
 
-/* Group same-sender messages closer */
 .msg-mine  + .msg-mine,
 .msg-theirs + .msg-theirs { margin-top: -8px; }
 
@@ -395,10 +378,8 @@ main { padding-top: 0 !important; }
 .msg-mine .msg-time  { text-align: right; }
 .msg-theirs .msg-time { text-align: left; }
 
-/* Sending state */
 .msg-sending .msg-bubble p { opacity: 0.6; }
 
-/* ── Footer / input ── */
 .chat-footer {
     flex-shrink: 0;
     padding: 12px 16px 16px;
@@ -478,19 +459,16 @@ const chatMsgs    = document.getElementById('chatMessages');
 const msgInput    = document.getElementById('msgInput');
 const sendBtn     = document.getElementById('sendBtn');
 
-// ── Auto-scroll to bottom ──
 function scrollBottom(smooth = false) {
     chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
 }
 
-// ── Auto-resize textarea ──
 msgInput.addEventListener('input', function () {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     sendBtn.disabled = this.value.trim().length === 0;
 });
 
-// ── Send on Enter (Shift+Enter = newline) ──
 msgInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -500,7 +478,6 @@ msgInput.addEventListener('keydown', function (e) {
 
 sendBtn.addEventListener('click', sendMessage);
 
-// ── Build a message bubble element ──
 function buildBubble(text, isMe, time, id, sending = false) {
     const row = document.createElement('div');
     row.className = `msg-row ${isMe ? 'msg-mine' : 'msg-theirs'}${sending ? ' msg-sending' : ''}`;
@@ -510,7 +487,6 @@ function buildBubble(text, isMe, time, id, sending = false) {
         `<img src="assets/images/profiles/<?= htmlspecialchars($chat['other_profile_image'] ?? 'default.jpg') ?>"
               class="msg-avatar" alt="">`;
 
-    // Escape HTML
     const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                      .replace(/\n/g,'<br>');
 
@@ -523,13 +499,11 @@ function buildBubble(text, isMe, time, id, sending = false) {
     return row;
 }
 
-// ── Remove empty-state hint on first message ──
 function removeHint() {
     const hint = chatMsgs.querySelector('.chat-start-hint');
     if (hint) hint.remove();
 }
 
-// ── Send message ──
 function sendMessage() {
     const text = msgInput.value.trim();
     if (!text || sending) return;
@@ -537,7 +511,6 @@ function sendMessage() {
     sending = true;
     sendBtn.disabled = true;
 
-    // Optimistic bubble
     removeHint();
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -556,7 +529,6 @@ function sendMessage() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Replace temp bubble with real one (has correct ID for polling dedup)
             tempBubble.classList.remove('msg-sending');
             if (data.message_id) tempBubble.dataset.id = data.message_id;
             lastId = Math.max(lastId, parseInt(data.message_id) || lastId);
@@ -576,14 +548,12 @@ function sendMessage() {
     });
 }
 
-// ── Poll for new messages ──
 function poll() {
     fetch(`api/messages.php?conversation_id=${CONV_ID}&last_id=${lastId}`)
         .then(r => r.json())
         .then(data => {
             if (!data.success || !data.messages.length) return;
 
-            // Collect IDs already in DOM to avoid duplicates from optimistic bubbles
             const existing = new Set(
                 [...chatMsgs.querySelectorAll('[data-id]')].map(el => el.dataset.id)
             );
@@ -609,13 +579,11 @@ function poll() {
         .catch(() => {});
 }
 
-// ── Init ──
 scrollBottom();
 pollTimer = setInterval(poll, 3000);
 
 window.addEventListener('beforeunload', () => clearInterval(pollTimer));
 
-// Focus input
 msgInput.focus();
 </script>
 

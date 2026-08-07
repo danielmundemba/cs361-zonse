@@ -2,11 +2,9 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
-// ─── Fetch categories ───
 $stmt = $pdo->query("SELECT * FROM categories ORDER BY display_order, name");
 $categories = $stmt->fetchAll();
 
-// ─── Fetch recent products ───
 $stmt = $pdo->query("
     SELECT p.*, pi.image_path, u.username, u.full_name AS seller_name
     FROM products p

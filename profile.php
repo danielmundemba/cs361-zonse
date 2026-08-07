@@ -2,7 +2,6 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
-// ─── Fetch user by username ───
 $username = trim($_GET['u'] ?? '');
 if (empty($username)) {
     header('Location: index.php');
@@ -24,7 +23,6 @@ if (!$user) {
     exit;
 }
 
-// ─── Fetch active listings ───
 $listingsStmt = $pdo->prepare("
     SELECT p.*, pi.image_path
     FROM products p
@@ -35,7 +33,6 @@ $listingsStmt = $pdo->prepare("
 $listingsStmt->execute([$user['user_id']]);
 $listings = $listingsStmt->fetchAll();
 
-// ─── Fetch stats ───
 $statsStmt = $pdo->prepare("
     SELECT 
         COUNT(*) as total_listings,
@@ -46,7 +43,6 @@ $statsStmt = $pdo->prepare("
 $statsStmt->execute([$user['user_id']]);
 $stats = $statsStmt->fetch();
 
-// ─── Check if viewing own profile ───
 $isOwnProfile = isLoggedIn() && $_SESSION['user_id'] === $user['user_id'];
 
 $pageTitle = htmlspecialchars($user['full_name'] ?? $user['username']);
@@ -56,14 +52,12 @@ require_once __DIR__ . '/includes/header.php';
 <section class="profile-view-section">
     <div class="container">
 
-        <!-- Breadcrumb -->
         <nav class="breadcrumb">
             <a href="index.php"><i class="fas fa-home"></i></a>
             <span class="breadcrumb-sep"><i class="fas fa-chevron-right"></i></span>
             <span><?= htmlspecialchars($user['full_name'] ?? $user['username']) ?></span>
         </nav>
 
-        <!-- Profile Header -->
         <div class="profile-header-card">
             <div class="profile-cover"></div>
 
@@ -121,7 +115,6 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <!-- Listings -->
         <div class="profile-listings-wrap">
             <div class="section-header">
                 <h2>
@@ -188,12 +181,10 @@ require_once __DIR__ . '/includes/header.php';
 </section>
 
 <style>
-/* ─── Profile Page Styles ─── */
 .profile-view-section {
     padding: 32px 0 80px;
 }
 
-/* Breadcrumb (consistent with product.php) */
 .breadcrumb {
     display: flex;
     align-items: center;
@@ -217,7 +208,6 @@ require_once __DIR__ . '/includes/header.php';
     text-overflow: ellipsis;
 }
 
-/* Profile Header Card */
 .profile-header-card {
     position: relative;
     background: var(--bg-card);
@@ -322,12 +312,10 @@ require_once __DIR__ . '/includes/header.php';
     flex-wrap: wrap;
 }
 
-/* Listings wrap */
 .profile-listings-wrap {
     padding-top: 8px;
 }
 
-/* ─── Responsive ─── */
 @media (max-width: 768px) {
     .profile-header-body {
         flex-direction: column;
@@ -367,7 +355,6 @@ require_once __DIR__ . '/includes/header.php';
 </style>
 
 <script>
-// ── Message User ──
 function messageUser(btn, userId) {
     const original = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting chat...';
@@ -395,7 +382,6 @@ function messageUser(btn, userId) {
     });
 }
 
-// ── Favorites (mirrors product.php logic) ──
 function toggleFav(btn, productId) {
     const wasActive = btn.classList.contains('active');
     const icon = btn.querySelector('i');

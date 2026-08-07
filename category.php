@@ -2,7 +2,6 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
-// ─── Accept ?slug=... or legacy ?id=... ───
 $slug  = trim($_GET['slug'] ?? '');
 $catId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -19,7 +18,6 @@ if ($slug) {
     $category = false;
 }
 
-// ─── Fetch listings if category found ───
 $products = [];
 if ($category) {
     $stmt = $pdo->prepare("
@@ -34,7 +32,6 @@ if ($category) {
     $products = $stmt->fetchAll();
 }
 
-// ─── All logic done, safe to output HTML ───
 $pageTitle = $category ? htmlspecialchars($category['name']) : 'Not Found';
 require_once __DIR__ . '/includes/header.php';
 

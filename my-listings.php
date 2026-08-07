@@ -4,7 +4,6 @@ requireLogin();
 
 $userId = (int)$_SESSION['user_id'];
 
-// ─── Handle status toggle ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'], $_POST['product_id'])) {
     $productId = (int)$_POST['product_id'];
 
@@ -22,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'], $_PO
     exit;
 }
 
-// ─── Handle delete ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'], $_POST['product_id'])) {
     $productId = (int)$_POST['product_id'];
 
@@ -49,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'], $_POST['pro
     exit;
 }
 
-// ─── Fetch listings ───
 require_once __DIR__ . '/includes/functions.php';
 
 $stmt = $pdo->prepare("
@@ -66,7 +63,6 @@ $listings = $stmt->fetchAll();
 $activeCount = count(array_filter($listings, fn($l) => $l['status'] === 'active'));
 $totalCount  = count($listings);
 
-// ─── Safe to output HTML now ───
 $pageTitle = 'My Listings';
 require_once __DIR__ . '/includes/header.php';
 ?>

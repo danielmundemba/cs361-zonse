@@ -1,13 +1,12 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 
-// ─── Admin Access Check ───
+
 if (!isLoggedIn() || empty($_SESSION['role']) || strtolower($_SESSION['role']) !== 'admin') {
     header('Location: index.php');
     exit;
 }
 
-// ─── Check if 'slug' column exists ───
 $hasSlug = false;
 try {
     $pdo->query("SELECT slug FROM categories LIMIT 1");
@@ -16,11 +15,9 @@ try {
     $hasSlug = false;
 }
 
-// ─── Handle Category Actions ───
 $success = '';
 $error = '';
 
-// Create Category
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create') {
     $name = trim($_POST['name'] ?? '');
     $icon = trim($_POST['icon'] ?? 'fa-tag');
@@ -29,7 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (empty($name)) {
         $error = 'Category name is required.';
     } else {
-        // Check if category already exists
         $check = $pdo->prepare("SELECT category_id FROM categories WHERE LOWER(name) = LOWER(?)");
         $check->execute([$name]);
         if ($check->fetch()) {
@@ -48,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Update Category
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
     $catId = (int)($_POST['category_id'] ?? 0);
     $name = trim($_POST['name'] ?? '');
@@ -70,11 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Delete Category
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
     $catId = (int)($_POST['category_id'] ?? 0);
     if ($catId > 0) {
-        // Check if category has products
         $check = $pdo->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
         $check->execute([$catId]);
         $count = $check->fetchColumn();
@@ -89,14 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// ─── Fetch Stats ───
 $stats = [];
 $stats['total_users'] = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $stats['total_products'] = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
 $stats['active_products'] = $pdo->query("SELECT COUNT(*) FROM products WHERE status = 'active'")->fetchColumn();
 $stats['total_categories'] = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn();
 
-// ─── Fetch All Categories ───
 $stmt = $pdo->query("
     SELECT c.*, COUNT(p.product_id) AS listing_count
     FROM categories c
@@ -117,21 +108,6 @@ require_once __DIR__ . '/includes/header.php';
             <p>Manage your marketplace from one place</p>
         </div>
 
-        <!--
-        ?php if (!$hasSlug): ?>
-            <div class="alert alert-warning" style="background: rgba(254, 202, 87, 0.1); border: 1px solid rgba(254, 202, 87, 0.2); color: #feca57;">
-                <i class="fas fa-info-circle"></i> 
-                <strong>Note:</strong> Your categories table is missing a <code>slug</code> column. 
-                <a href="#" onclick="document.getElementById('sqlHelp').style.display='block'; return false;" style="color: #feca57; text-decoration: underline;">Click here for the fix SQL</a>.
-            </div>
-            <div id="sqlHelp" style="display:none; background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 20px; font-family: monospace; font-size: 0.85rem; color: var(--text-secondary);">
-                ALTER TABLE categories ADD COLUMN slug VARCHAR(100) UNIQUE AFTER name;<br>
-                UPDATE categories SET slug = LOWER(REPLACE(name, ' ', '-'));<br>
-                ALTER TABLE categories MODIFY slug VARCHAR(100) NOT NULL;
-            </div>
-        ?php endif; ?>
-        -->
-
         <?php if ($success): ?>
             <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
@@ -139,7 +115,6 @@ require_once __DIR__ . '/includes/header.php';
             <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
-        <!-- Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon"><i class="fas fa-users"></i></div>
@@ -171,7 +146,6 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
 
-        <!-- Category Management -->
         <div class="admin-card">
             <div class="admin-card-header">
                 <h2><i class="fas fa-th-large"></i> Category Management</h2>
@@ -326,7 +300,6 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 <style>
-/* ─── Admin Dashboard Styles ─── */
 .admin-section { padding: 40px 0 80px; }
 
 .admin-header {
@@ -347,7 +320,6 @@ document.addEventListener('keydown', function(e) {
     margin-top: 4px;
 }
 
-/* Stats Grid */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -397,7 +369,6 @@ document.addEventListener('keydown', function(e) {
     margin-top: 2px;
 }
 
-/* Admin Card */
 .admin-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -424,7 +395,6 @@ document.addEventListener('keydown', function(e) {
     color: var(--accent);
 }
 
-/* Table */
 .table-responsive {
     overflow-x: auto;
 }
@@ -476,7 +446,6 @@ document.addEventListener('keydown', function(e) {
     color: var(--text-muted);
 }
 
-/* Action Buttons */
 .btn-icon {
     width: 36px;
     height: 36px;
@@ -508,7 +477,6 @@ document.addEventListener('keydown', function(e) {
     padding: 0;
 }
 
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -609,7 +577,6 @@ document.addEventListener('keydown', function(e) {
     font-size: 0.9rem;
 }
 
-/* Alert Warning */
 .alert-warning {
     display: flex;
     align-items: center;
@@ -621,7 +588,6 @@ document.addEventListener('keydown', function(e) {
     font-weight: 500;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);

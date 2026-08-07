@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 
-// ─── Redirect if not logged in ───
 if (!isLoggedIn()) {
     header('Location: login.php');
     exit;
@@ -10,7 +9,6 @@ if (!isLoggedIn()) {
 $errors = [];
 $success = false;
 
-// ─── Fetch current user data ───
 $stmt = $pdo->prepare("
     SELECT user_id, username, first_name, last_name, full_name,
            email, phone, location, profile_image, created_at
@@ -26,7 +24,6 @@ if (!$user) {
     exit;
 }
 
-// ─── Handle form submission ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCsrf()) {
         $errors['general'] = 'Invalid request. Please try again.';
@@ -71,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors['phone'] = 'Please enter a valid phone number.';
         }
 
-        // ─── Password change (optional) ───
         $password_hash = null;
         if (!empty($new_password) || !empty($confirm_password)) {
             if (empty($current_password)) {
@@ -93,7 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // ─── Profile image upload ───
         $profile_image = $user['profile_image'] ?? 'default.jpg';
         if (!empty($_FILES['profile_image']['tmp_name'])) {
             $file = $_FILES['profile_image'];
@@ -114,7 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newName = uniqid('profile_') . '_' . $_SESSION['user_id'] . '.' . $ext;
                 $uploadPath = $uploadDir . $newName;
 
-                // Resize image (max 400x400)
                 list($width, $height) = getimagesize($file['tmp_name']);
                 $maxDim = 400;
                 $ratio = min($maxDim / $width, $maxDim / $height);
@@ -142,7 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 imagedestroy($dst);
 
                 if ($saved) {
-                    // Delete old image if not default
                     if ($profile_image !== 'default.jpg' && file_exists($uploadDir . $profile_image)) {
                         unlink($uploadDir . $profile_image);
                     }
@@ -153,7 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // ─── Update database ───
         if (empty($errors)) {
             try {
                 $sql = "
@@ -174,7 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateStmt = $pdo->prepare($sql);
                 $updateStmt->execute($params);
 
-                // Update session
                 $_SESSION['full_name'] = $full_name;
                 $_SESSION['profile_image'] = $profile_image;
 
@@ -377,7 +368,6 @@ require_once __DIR__ . '/includes/header.php';
 </section>
 
 <style>
-/* ─── Profile Image Upload ─── */
 .profile-image-upload {
     display: flex;
     align-items: center;
@@ -459,7 +449,6 @@ require_once __DIR__ . '/includes/header.php';
     color: var(--text-muted);
 }
 
-/* ─── Form Action Row ─── */
 .form-action-row {
     display: flex;
     gap: 12px;
@@ -479,7 +468,6 @@ require_once __DIR__ . '/includes/header.php';
     margin: 0;
 }
 
-/* ─── Responsive ─── */
 @media (max-width: 480px) {
     .profile-image-upload {
         flex-direction: column;
@@ -495,7 +483,6 @@ require_once __DIR__ . '/includes/header.php';
 </style>
 
 <script>
-// ─── Password toggles ───
 document.querySelectorAll('.toggle-password').forEach(btn => {
     btn.addEventListener('click', () => {
         const target = document.getElementById(btn.dataset.target);
@@ -510,7 +497,6 @@ document.querySelectorAll('.toggle-password').forEach(btn => {
     });
 });
 
-// ─── Password strength meter ───
 const newPasswordInput = document.getElementById('new_password');
 const strengthBox      = document.getElementById('password-strength');
 const strengthBars     = strengthBox.querySelectorAll('.strength-bar span');
@@ -542,7 +528,6 @@ newPasswordInput.addEventListener('input', () => {
     strengthText.className   = 'strength-text ' + levels[level];
 });
 
-// ─── Profile image preview ───
 const profileInput   = document.getElementById('profile_image');
 const profilePreview = document.getElementById('profilePreview');
 const previewWrap    = document.querySelector('.profile-preview-wrap');
@@ -570,7 +555,6 @@ profileInput.addEventListener('change', (e) => {
     reader.readAsDataURL(file);
 });
 
-// Click on preview also triggers file input
 previewWrap.addEventListener('click', () => profileInput.click());
 </script>
 

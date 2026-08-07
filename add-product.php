@@ -6,11 +6,11 @@ requireLogin();
 $sellerId = (int)$_SESSION['user_id'];
 $errors   = [];
 
-// ─── Fetch categories ───
+//  Fetch categories
 $stmt = $pdo->query("SELECT category_id, name FROM categories ORDER BY name");
 $categories = $stmt->fetchAll();
 
-// ─── Handle form submission ───
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title           = trim($_POST['title'] ?? '');
     $description     = trim($_POST['description'] ?? '');
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoryId      = (int)($_POST['category_id'] ?? 0);
     $location        = trim($_POST['location'] ?? '');
 
-    // ─── Validation ───
+    // Validation
     if (strlen($title) < 3) {
         $errors[] = 'Title must be at least 3 characters.';
     }
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // ─── Generate unique slug ───
+        // Generate unique slug 
         $baseSlug = slugify($title);
         $slug     = $baseSlug;
         $counter  = 2;
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $slug = $baseSlug . '-' . $counter++;
         }
 
-        // ─── Insert product ───
+        // Insert product
         $stmt = $pdo->prepare("
             INSERT INTO products 
                 (slug, seller_id, category_id, title, description, price, condition_status, location, status, created_at, updated_at)
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $productId = (int)$pdo->lastInsertId();
 
-        // ─── Handle image uploads ───
+        // Handle image uploads 
         $uploadDir = __DIR__ . '/assets/images/uploads/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
@@ -106,14 +106,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // ─── Redirect to My Listings ───
+        // Redirect to My Listings 
         flash('success', 'Your item has been listed successfully!');
         header('Location: my-listings.php');
         exit;
     }
 }
 
-// ─── Nothing has been output yet — safe to render HTML ───
 $pageTitle = 'Sell an Item';
 require_once __DIR__ . '/includes/header.php';
 ?>
